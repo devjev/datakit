@@ -352,6 +352,15 @@ impl ValidatesValues for ValueConstraint {
             },
             (ValueConstraint::OneOf(allowed_values), v) => {
                 for allowed in allowed_values.iter() {
+                    println!("<");
+                    println!("\tv = {:?}", v);
+                    println!("\tallowed = {:?}", allowed);
+                    println!("\tvalue = {:?}", value);
+                    println!("\tv == allowed -> {:?}", v == allowed);
+                    println!("\tvalue == allowed -> {:?}", value == allowed);
+                    println!("\tv != allowed -> {:?}", v != allowed);
+                    println!("\tvalue != allowed -> {:?}", value != allowed);
+                    println!(">");
                     if v != allowed {
                         return _to_valueconstraint_err!(v, self);
                     }

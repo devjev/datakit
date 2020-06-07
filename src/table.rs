@@ -24,12 +24,12 @@ impl Schema {
         }
     }
 
-    pub fn from_hashmap(schema: HashMap<String, ValueContract>) -> Self {
+    pub fn from_tuples(tuples: Vec<(&str, ValueContract)>) -> Self {
         let mut new = Self::new();
-        for (name, value_contract) in schema.iter() {
+        for (name, vc) in tuples.iter() {
             new.column_contracts.push(ColumnContract {
-                name: name.clone(),
-                value_contract: value_contract.clone(),
+                name: String::from(*name),
+                value_contract: vc.clone(),
             })
         }
         new
@@ -71,6 +71,11 @@ impl Table {
     pub fn from_schema(schema: &Schema) -> Self {
         let mut new = Self::new();
         new.column_contracts = schema.column_contracts.clone();
+        new.col_length = schema.column_contracts.len();
+        for _ in 0..new.col_length {
+            new.columns.push(Vec::new());
+        }
+        new.row_length = 0;
         new
     }
 
@@ -115,13 +120,14 @@ impl Table {
         Ok(())
     }
 
-    pub fn add_row(&mut self, row: Vec<Value>) -> Result<(), TableError> {
+    pub fn add_row(&mut self, row: &Vec<Value>) -> Result<(), TableError> {
         if row.len() != self.col_length {
             Err(TableError::DimensionError)
         } else {
             for (col_index, value) in row.iter().enumerate() {
                 self.columns[col_index].push(value.clone());
             }
+            self.row_length += 1;
             Ok(())
         }
     }
