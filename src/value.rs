@@ -1,4 +1,4 @@
-//! Dynamic runtime values.
+//! Dynamic runtime values and value data contracts
 //!
 //! The purpose of this library is to model data that is being input by the user. As such,
 //! user input values should have:
@@ -27,6 +27,29 @@
 //! 4. `NumericRangeContract`
 //! 5. Combinations of Values, like Addition, Multiplication, etc.
 //!
+//! # Example
+//!
+//! ```json
+//! {
+//!     "name": {
+//!         "text": "Jim"
+//!     },
+//!     "height": {
+//!         "number": {
+//!             "real": 1.83
+//!         }
+//!     },
+//!     "dateOfBirth": {
+//!         "dateTime": "1985-03-10T00:11:00Z"
+//!     },
+//!     "favoriteColor": {
+//!         "missing": "unexpected"
+//!     },
+//!     "favoriteCake": {
+//!         "missing": "expected"
+//!     }
+//! }
+//! ```
 
 use chrono::{DateTime, FixedOffset, Local, Utc};
 use serde::{Deserialize, Serialize};
@@ -35,6 +58,7 @@ use std::error::Error;
 
 // Errors --------------------------------------------------------------------
 
+/// An error that represents a single instance of a failed Value validation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ConstraintError {
@@ -93,7 +117,11 @@ impl Error for ValueValidationError {
 
 // Traits --------------------------------------------------------------------
 
-/// Validates values.
+/// Value Validation
+///
+/// Returns either an Ok(()) result (if validation has been successfull) or
+/// a filled out ValueValidationError.
+///
 pub trait ValidatesValues {
     fn validate(&self, value: &Value) -> Result<(), ValueValidationError>;
 }
@@ -198,11 +226,20 @@ pub enum Numeric {
     Complex(f64, f64),
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Collection<T> {
+    Array(Vec<T>),
+    Object(Vec<(String, T)>),
+}
+
 value_types! {
     Number(Numeric),
     Text(String),
     DateTime(DateTime<Utc>),
-    Missing(Empty)
+    Missing(Empty),
+    Boolean(bool),
+    Composite(Collection<Value>)
 }
 
 impl_from_t_to_value! {
@@ -236,7 +273,8 @@ impl_from_t_to_value! {
     DateTime<FixedOffset> => |value: &DateTime<FixedOffset>| {
         let utc_time = value.with_timezone(&Utc);
         Value::DateTime(utc_time)
-    }
+    },
+    bool => |value: &bool| { Value::Boolean(value.clone()) }
 }
 
 impl_from_value_to_t_option! {
@@ -246,7 +284,8 @@ impl_from_value_to_t_option! {
     f64 => Value::Number(Numeric::Real(r)) => r,
     String => Value::Text(text) => text,
     DateTime<Utc> => Value::DateTime(t) => t,
-    DateTime<Local> => Value::DateTime(t) => t.with_timezone(&Local)
+    DateTime<Local> => Value::DateTime(t) => t.with_timezone(&Local),
+    bool => Value::Boolean(b) => b
     // TODO &str and DateTime<FixedOffset>
 }
 
@@ -359,19 +398,38 @@ impl ValidatesValues for ValueConstraint {
     }
 }
 
-impl<T> ValidatesValues for Vec<T>
-where
-    T: ValidatesValues,
-{
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValueContract {
+    pub expected_type: TypeConstraint,
+    pub value_constraints: Vec<ValueConstraint>,
+}
+
+impl ValueContract {
+    pub fn new(expected_type: TypeConstraint, value_constraints: Vec<ValueConstraint>) -> Self {
+        Self {
+            expected_type,
+            value_constraints,
+        }
+    }
+}
+
+impl ValidatesValues for ValueContract {
     fn validate(&self, value: &Value) -> Result<(), ValueValidationError> {
-        let mut errors: Vec<ConstraintError> = Vec::new();
         let mut errors_found = false;
-        for v in self.iter() {
-            if let Err(error) = v.validate(value) {
+        let mut errors: Vec<ConstraintError> = Vec::new();
+        if let Err(tce) = self.expected_type.validate(value) {
+            errors_found = true;
+            errors.extend(tce.failed_constraints);
+        };
+
+        for vc in self.value_constraints.iter() {
+            if let Err(vce) = vc.validate(value) {
                 errors_found = true;
-                errors.extend(error.failed_constraints);
+                errors.extend(vce.failed_constraints);
             }
         }
+
         if errors_found {
             Err(ValueValidationError {
                 offending_value: value.clone(),
