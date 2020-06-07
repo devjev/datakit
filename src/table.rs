@@ -162,6 +162,38 @@ impl Table {
             Ok(())
         }
     }
+
+    pub fn map_column_if(
+        &mut self,
+        col_id: ColumnId,
+        func: &dyn Fn(&Value) -> Value,
+        predicates: &Vec<(ColumnId, &dyn Fn(&Value) -> bool)>,
+    ) -> Result<(), TableError> {
+        let ordinal = self.resolve_column_id(&col_id)?;
+        for rowno in 0..self.row_length {
+            let old_value = &self.columns[ordinal][rowno];
+
+            for (other_col_id, predicate) in predicates {
+                let other_col_ordinal = self.resolve_column_id(other_col_id)?;
+                let other_col_value = &self.columns[other_col_ordinal][rowno];
+                if !predicate(other_col_value) {
+                    continue;
+                }
+            }
+
+            let new_value = func(old_value);
+            self.columns[ordinal][rowno] = new_value;
+        }
+        Ok(())
+    }
+
+    pub fn map_column(
+        &mut self,
+        col_id: ColumnId,
+        func: &dyn Fn(&Value) -> Value,
+    ) -> Result<(), TableError> {
+        self.map_column_if(col_id, func, &Vec::new())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
