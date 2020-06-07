@@ -13,6 +13,31 @@ pub struct ColumnContract {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Schema {
+    column_contracts: Vec<ColumnContract>,
+}
+
+impl Schema {
+    pub fn new() -> Self {
+        Self {
+            column_contracts: Vec::new(),
+        }
+    }
+
+    pub fn from_hashmap(schema: HashMap<String, ValueContract>) -> Self {
+        let mut new = Self::new();
+        for (name, value_contract) in schema.iter() {
+            new.column_contracts.push(ColumnContract {
+                name: name.clone(),
+                value_contract: value_contract.clone(),
+            })
+        }
+        new
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Table {
     columns: Vec<Column>,
     column_contracts: Vec<ColumnContract>,
@@ -43,15 +68,9 @@ impl Table {
         }
     }
 
-    pub fn from_schema_hashmap(schema: HashMap<String, ValueContract>) -> Self {
+    pub fn from_schema(schema: &Schema) -> Self {
         let mut new = Self::new();
-        for (name, value_contract) in schema.iter() {
-            new.add_empty_column(ColumnContract {
-                name: name.clone(),
-                value_contract: value_contract.clone(),
-            })
-            .unwrap();
-        }
+        new.column_contracts = schema.column_contracts.clone();
         new
     }
 
