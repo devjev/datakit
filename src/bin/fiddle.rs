@@ -140,7 +140,6 @@ fn main() {
     println!(".... Table");
     println!("{}", table_json);
     println!(".... Validation Result");
-    println!("{:?}", validation);
     println!("{}", validation_result_json);
     println!(".... Schema");
     println!("{}", schema_json);

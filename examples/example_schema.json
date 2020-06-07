@@ -1,0 +1,33 @@
+{
+  "columnContracts": [
+    {
+      "name": "Name",
+      "valueContract": {
+        "expectedType": { "isType": "text" },
+        "valueConstraints": [{ "maximumLength": 100 }]
+      }
+    },
+    {
+      "name": "FavoritePie",
+      "valueContract": {
+        "expectedType": { "isType": "text" },
+        "valueConstraints": [
+          {
+            "oneOf": [
+              { "text": "Apple" },
+              { "text": "Cherry" },
+              { "text": "Blueberry" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "PiesEaten",
+      "valueContract": {
+        "expectedType": { "isType": "number" },
+        "valueConstraints": []
+      }
+    }
+  ]
+}
