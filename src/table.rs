@@ -43,6 +43,18 @@ impl Table {
         }
     }
 
+    pub fn from_schema_hashmap(schema: HashMap<String, ValueContract>) -> Self {
+        let mut new = Self::new();
+        for (name, value_contract) in schema.iter() {
+            new.add_empty_column(ColumnContract {
+                name: name.clone(),
+                value_contract: value_contract.clone(),
+            })
+            .unwrap();
+        }
+        new
+    }
+
     fn column_order(&self, col_name: &str) -> Option<usize> {
         self.column_contracts
             .iter()
