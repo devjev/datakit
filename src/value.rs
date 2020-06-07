@@ -346,39 +346,37 @@ impl ValidatesValues for ValueConstraint {
     fn validate(&self, value: &Value) -> Result<(), ValueValidationError> {
         match (self, value) {
             (ValueConstraint::Any, _) => Ok(()),
-            (ValueConstraint::Not(c), v) => match c.validate(v) {
-                Ok(()) => _to_valueconstraint_err!(v, self),
+            (ValueConstraint::Not(c), _) => match c.validate(value) {
+                Ok(()) => _to_valueconstraint_err!(value, self),
                 Err(_) => Ok(()),
             },
-            (ValueConstraint::OneOf(allowed_values), v) => {
+            (ValueConstraint::OneOf(allowed_values), _) => {
+                let mut is_one_of_the_allowed = false;
                 for allowed in allowed_values.iter() {
-                    println!("<");
-                    println!("\tv = {:?}", v);
-                    println!("\tallowed = {:?}", allowed);
-                    println!("\tvalue = {:?}", value);
-                    println!("\tv == allowed -> {:?}", v == allowed);
-                    println!("\tvalue == allowed -> {:?}", value == allowed);
-                    println!("\tv != allowed -> {:?}", v != allowed);
-                    println!("\tvalue != allowed -> {:?}", value != allowed);
-                    println!(">");
-                    if v != allowed {
-                        return _to_valueconstraint_err!(v, self);
+                    if value == allowed {
+                        is_one_of_the_allowed = true;
+                        break;
                     }
                 }
-                Ok(())
-            }
-            (ValueConstraint::Maximum(mv), v) => {
-                if v <= mv {
+
+                if is_one_of_the_allowed {
                     Ok(())
                 } else {
-                    _to_valueconstraint_err!(v, self)
+                    return _to_valueconstraint_err!(value, self);
                 }
             }
-            (ValueConstraint::Minimum(mv), v) => {
-                if v >= mv {
+            (ValueConstraint::Maximum(max), _) => {
+                if value <= max {
                     Ok(())
                 } else {
-                    _to_valueconstraint_err!(v, self)
+                    _to_valueconstraint_err!(value, self)
+                }
+            }
+            (ValueConstraint::Minimum(min), _) => {
+                if value >= min {
+                    Ok(())
+                } else {
+                    _to_valueconstraint_err!(value, self)
                 }
             }
             (ValueConstraint::MaximumLength(len), Value::Text(text)) => {
