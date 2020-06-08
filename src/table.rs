@@ -14,7 +14,7 @@ pub struct ColumnContract {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Schema {
-    column_contracts: Vec<ColumnContract>,
+    pub column_contracts: Vec<ColumnContract>,
 }
 
 impl Schema {
@@ -200,11 +200,11 @@ impl Table {
         }
     }
 
-    pub fn map_column_if(
+    pub fn map_column_if<F: Fn(&Value) -> Value, P: Fn(&Value) -> bool>(
         &mut self,
-        col_id: ColumnId,
-        func: &dyn Fn(&Value) -> Value,
-        predicates: &Vec<(ColumnId, &dyn Fn(&Value) -> bool)>,
+        col_id: &ColumnId,
+        func: F,
+        predicates: &Vec<(ColumnId, P)>,
     ) -> Result<(), TableError> {
         let ordinal = self.resolve_column_id(&col_id)?;
         for rowno in 0..self.row_length {
@@ -224,12 +224,18 @@ impl Table {
         Ok(())
     }
 
-    pub fn map_column(
+    pub fn map_column<F: Fn(&Value) -> Value>(
         &mut self,
-        col_id: ColumnId,
-        func: &dyn Fn(&Value) -> Value,
+        col_id: &ColumnId,
+        func: F,
     ) -> Result<(), TableError> {
-        self.map_column_if(col_id, func, &Vec::new())
+        let ordinal = self.resolve_column_id(&col_id)?;
+        for rowno in 0..self.row_length {
+            let old_value = &self.columns[ordinal][rowno];
+            let new_value = func(old_value);
+            self.columns[ordinal][rowno] = new_value;
+        }
+        Ok(())
     }
 }
 
