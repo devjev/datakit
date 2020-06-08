@@ -253,6 +253,10 @@ impl_from_value_to_t_option! {
 pub struct ValueConversion {}
 
 impl ValueConversion {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     fn text_to_number(&self, value: &Value) -> Result<Value, ValueConversionError> {
         if let Value::Text(s) = value {
             match s.parse::<i64>() {
