@@ -1,6 +1,6 @@
 [package]
 name = "datakit"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Jevgeni Tarasov <jev@jst.lu>"]
 edition = "2018"
 
