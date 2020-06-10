@@ -140,6 +140,16 @@ impl Table {
         &self.columns
     }
 
+    pub fn column(&self, col_id: &ColumnId) -> Result<&Column, TableError> {
+        let ordinal = self.resolve_column_id(col_id)?;
+        Ok(&self.columns[ordinal])
+    }
+
+    pub fn column_contract(&self, col_id: &ColumnId) -> Result<&ColumnContract, TableError> {
+        let ordinal = self.resolve_column_id(col_id)?;
+        Ok(&self.column_contracts[ordinal])
+    }
+
     pub fn alter_column(
         &mut self,
         col_id: &ColumnId,
@@ -194,7 +204,7 @@ impl Table {
         }
 
         if result.len() != 0 {
-            Err(TableError::TableDataInvalid(result))
+            Err(TableError::TableInvalid(result))
         } else {
             Ok(())
         }
@@ -237,6 +247,49 @@ impl Table {
         }
         Ok(())
     }
+
+    pub fn check_compatibility(&self, schema: &Schema) -> Result<(), SchemaValidationError> {
+        let mut result: Vec<SchemaError> = Vec::new();
+
+        'outer: for their_cc in schema.column_contracts.iter() {
+            for our_cc in self.column_contracts.iter() {
+                if their_cc.name == our_cc.name {
+                    if their_cc.value_contract != our_cc.value_contract {
+                        result.push(SchemaError::ConflictingConstraints {
+                            expected: their_cc.clone(),
+                            received: our_cc.clone(),
+                        });
+                    };
+                    continue 'outer;
+                }
+            }
+            result.push(SchemaError::MissingColumn(their_cc.name.clone()));
+        }
+
+        if result.len() > 0 {
+            Err(SchemaValidationError {
+                schema_errors: result,
+            })
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SchemaValidationError {
+    pub schema_errors: Vec<SchemaError>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SchemaError {
+    ConflictingConstraints {
+        expected: ColumnContract,
+        received: ColumnContract,
+    },
+    MissingColumn(String),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -258,5 +311,5 @@ pub enum ColumnError {
 pub enum TableError {
     DimensionError, // TODO
     ColumnError(ColumnError),
-    TableDataInvalid(HashMap<String, Vec<(usize, ValueValidationError)>>),
+    TableInvalid(HashMap<String, Vec<(usize, ValueValidationError)>>),
 }
