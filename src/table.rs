@@ -69,6 +69,10 @@ impl Table {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.row_length
+    }
+
     pub fn from_schema(schema: &Schema) -> Self {
         let mut new = Self::new();
         new.column_contracts = schema.column_contracts.clone();

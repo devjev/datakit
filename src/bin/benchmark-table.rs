@@ -292,10 +292,7 @@ where
     Value::Number(Numeric::Integer(n))
 }
 
-fn generate_random_table<R>(rng: &mut R, number_of_rows: usize) -> Table
-where
-    R: Rng,
-{
+fn make_test_table() -> Table {
     let schema = Schema::from_tuples(vec![
         (
             "Name",
@@ -324,31 +321,35 @@ where
         ),
     ]);
 
-    let mut table = Table::from_schema(&schema);
+    Table::from_schema(&schema)
+}
 
-    for _ in 0..number_of_rows {
-        table
-            .add_row(&vec![
-                generate_random_person_name(rng),
-                generate_random_flavor(rng),
-                generate_random_number_of_pies_eaten(rng),
-            ])
-            .unwrap();
-    }
-
+fn add_random_row_to_table<R>(rng: &mut R, table: &mut Table)
+where
+    R: Rng,
+{
     table
+        .add_row(&vec![
+            generate_random_person_name(rng),
+            generate_random_flavor(rng),
+            generate_random_number_of_pies_eaten(rng),
+        ])
+        .unwrap();
 }
 
 fn main() {
     let mut writer = csv::Writer::from_path("benchmark-table.csv").unwrap();
 
     let mut rng = rand::thread_rng();
+    let mut table = make_test_table();
 
-    for n in 0..100000 {
+    for n in 0..25000 {
+        add_random_row_to_table(&mut rng, &mut table);
+
         console::Term::stdout().clear_screen().unwrap();
         print!("n = ");
-        println!("{}", console::style(n).red());
-        let table = generate_random_table(&mut rng, n);
+        println!("{}", console::style(table.len()).red());
+
         let seq_bench = bench!("Sequential validation", n => table.validate_table());
         let par_bench = bench!("Parallel validation", n => table.validate_table_par());
         writer.serialize(seq_bench).unwrap();

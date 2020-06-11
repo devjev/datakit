@@ -4,7 +4,7 @@ benchmark_results <- readr::read_csv("benchmark-data/benchmark-table.csv")
 
 scatter <- 
   ggplot(benchmark_results, aes(x = size, y = duration_micros)) +
-    geom_point(aes(col = case))
+    geom_jitter(aes(col = case))
 
 box_plot <-
   ggplot(benchmark_results, aes(x = case, y = duration_micros)) +
@@ -18,3 +18,15 @@ box_plot <-
 
 ggsave("benchmark-table-validation-scatter.png", scatter)
 ggsave("benchmark-table-validation-boxplot.png", box_plot)
+
+global_summary <- summary(benchmark_results)
+
+seq_summary <- 
+  benchmark_results %>%
+  filter(case == "Sequential validation") %>%
+  summary()
+
+par_summary <- 
+  benchmark_results %>%
+  filter(case == "Parallel validation") %>%
+  summary()
