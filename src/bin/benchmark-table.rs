@@ -344,7 +344,7 @@ fn main() {
 
     let mut rng = rand::thread_rng();
 
-    for n in 0..20000 {
+    for n in 0..100000 {
         console::Term::stdout().clear_screen().unwrap();
         print!("n = ");
         println!("{}", console::style(n).red());

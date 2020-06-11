@@ -138,36 +138,36 @@ I've tested the performance of both implementations for randomly generated table
 
 ```
      case                size        expression        duration_micros   success
- Length:40000       Min.   :    0   Length:40000       Min.   :     1   Mode :logical
- Class :character   1st Qu.: 5000   Class :character   1st Qu.:  1908   FALSE:39988
- Mode  :character   Median :10000   Mode  :character   Median :  3223   TRUE :12
-                    Mean   :10000                      Mean   :  3400
-                    3rd Qu.:14999                      3rd Qu.:  4534
-                    Max.   :19999                      Max.   :209897
+ Length:100002      Min.   :    0   Length:100002      Min.   :     2   Mode :logical
+ Class :character   1st Qu.:12500   Class :character   1st Qu.:  3784   FALSE:99992
+ Mode  :character   Median :25000   Mode  :character   Median :  6547   TRUE :10
+                    Mean   :25000                      Mean   :  7121
+                    3rd Qu.:37500                      3rd Qu.:  9042
+                    Max.   :50000                      Max.   :219334
 ```
 
 **Statistics for sequential routines**:
 
 ```
-     case                size        expression        duration_micros  success
- Length:20000       Min.   :    0   Length:20000       Min.   :    1   Mode :logical
- Class :character   1st Qu.: 5000   Class :character   1st Qu.: 1587   FALSE:19994
- Mode  :character   Median :10000   Mode  :character   Median : 2768   TRUE :6
-                    Mean   :10000                      Mean   : 2874
-                    3rd Qu.:14999                      3rd Qu.: 3905
-                    Max.   :19999                      Max.   :48189
+     case                size        expression        duration_micros   success
+ Length:50001       Min.   :    0   Length:50001       Min.   :     2   Mode :logical
+ Class :character   1st Qu.:12500   Class :character   1st Qu.:  3245   FALSE:49996
+ Mode  :character   Median :25000   Mode  :character   Median :  5896   TRUE :5
+                    Mean   :25000                      Mean   :  6325
+                    3rd Qu.:37500                      3rd Qu.:  8059
+                    Max.   :50000                      Max.   :128412
 ```
 
 **Statistics for parallel routines**:
 
 ```
      case                size        expression        duration_micros   success
- Length:20000       Min.   :    0   Length:20000       Min.   :    39   Mode :logical
- Class :character   1st Qu.: 5000   Class :character   1st Qu.:  2297   FALSE:19994
- Mode  :character   Median :10000   Mode  :character   Median :  3758   TRUE :6
-                    Mean   :10000                      Mean   :  3926
-                    3rd Qu.:14999                      3rd Qu.:  5124
-                    Max.   :19999                      Max.   :209897
+ Length:50001       Min.   :    0   Length:50001       Min.   :    52   Mode :logical
+ Class :character   1st Qu.:12500   Class :character   1st Qu.:  4355   FALSE:49996
+ Mode  :character   Median :25000   Mode  :character   Median :  7317   TRUE :5
+                    Mean   :25000                      Mean   :  7916
+                    3rd Qu.:37500                      3rd Qu.: 10155
+                    Max.   :50000                      Max.   :219334
 ```
 
 ### Charts
