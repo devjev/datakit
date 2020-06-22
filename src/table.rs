@@ -1,7 +1,18 @@
 use crate::value::*;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+#[cfg(feature = "experimental")]
+use rayon::prelude::*;
+
+#[cfg(feature = "experimental")]
+use std::sync::mpsc;
+
+#[cfg(feature = "experimental")]
+use std::sync::mpsc::{Receiver, Sender};
+
+#[cfg(feature = "experimental")]
+use std::thread;
 
 pub type Column = Vec<Value>;
 
@@ -165,6 +176,7 @@ impl Table {
         Ok(())
     }
 
+    #[cfg(feature = "experimental")]
     pub fn validate_column_par(&self, col_id: &ColumnId) -> Result<(), TableError> {
         let column_contract = self.column_contract(col_id)?;
         let column = self.column(col_id)?;
@@ -219,6 +231,7 @@ impl Table {
         }
     }
 
+    #[cfg(feature = "experimental")]
     pub fn validate_table_par(&self) -> Result<(), TableError> {
         let column_results: Vec<(ColumnContract, Vec<(usize, ValueValidationError)>)> = self
             .columns()
