@@ -1,3 +1,4 @@
+pub mod errors;
 pub mod table;
 pub mod value;
 
@@ -5,12 +6,14 @@ pub mod value;
 
 #[cfg(test)]
 mod conversion_tests {
+    use crate::value::definition::*;
+    use crate::value::primitives::*;
+
     macro_rules! from_impl_tests {
         ( $($description:ident [$x:expr, $type:ty] => $e:expr);+ ) => {
             $(
                 #[test]
                 fn $description() {
-                    use crate::value::*;
                     let x: Value = ($x).into();
                     assert_eq!(x, $e)
                 }
@@ -33,16 +36,17 @@ mod conversion_tests {
 
 #[cfg(test)]
 mod api_tests {
+    use crate::value::definition::*;
+    use crate::value::primitives::*;
+
     #[test]
     fn value_from_creation_works() {
-        use crate::value::*;
         let x = Value::from(72.1);
         assert_eq!(x, Value::Number(Numeric::Real(72.1)));
     }
 
     #[test]
     fn is_of_type_is_correct() {
-        use crate::value::*;
         let x = Value::from(137);
         assert!(x.is_of_type(&ValueType::Number));
         assert!(!x.is_of_type(&ValueType::Text));
@@ -50,7 +54,6 @@ mod api_tests {
 
     #[test]
     fn ordering_test() {
-        use crate::value::*;
         let a = Value::from(2);
         let b = Value::from(7);
         assert!(b > a);
