@@ -30,7 +30,6 @@ pub enum ValidationError {
     },
 }
 
-// TODO convert to proper Errors
 #[derive(Debug, Clone, Serialize, Deserialize, Error)]
 #[serde(rename_all = "camelCase")]
 pub enum CoercionError {
@@ -48,4 +47,11 @@ pub enum CoercionError {
 
     #[error("Domain error")] // TODO elaborate on that
     DomainError(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Error)]
+#[serde(rename_all = "camelCase")]
+pub enum ParsingError {
+    #[error("Parsing failed")]
+    CannotParseValue(String),
 }
