@@ -212,7 +212,7 @@ impl Table {
         let column_contract = &self.column_contracts[ordinal];
         let column = &self.columns[ordinal];
 
-        let mut result: Vec<(usize, ValueValidationError)> = Vec::new();
+        let mut result: Vec<(usize, ValidationError)> = Vec::new();
         for (rowno, value) in column.iter().enumerate() {
             match column_contract.value_contract.validate(value) {
                 Ok(()) => (),
@@ -264,7 +264,7 @@ impl Table {
     }
 
     pub fn validate_table(&self) -> Result<(), TableError> {
-        let mut result: HashMap<String, Vec<(usize, ValueValidationError)>> = HashMap::new();
+        let mut result: HashMap<String, Vec<(usize, ValidationError)>> = HashMap::new();
         for (ordinal, _) in self.columns.iter().enumerate() {
             if let Err(table_error) = self.validate_column(&ColumnId::Ordinal(ordinal)) {
                 if let TableError::ColumnError(ColumnError::ContainsInvalidValues {
@@ -377,7 +377,7 @@ pub enum ColumnError {
     },
     ContainsInvalidValues {
         contract: ColumnContract,
-        errors: Vec<(usize, ValueValidationError)>,
+        errors: Vec<(usize, ValidationError)>,
     },
 }
 
@@ -386,5 +386,5 @@ pub enum ColumnError {
 pub enum TableError {
     DimensionError, // TODO
     ColumnError(ColumnError),
-    InvalidData(HashMap<String, Vec<(usize, ValueValidationError)>>),
+    InvalidData(HashMap<String, Vec<(usize, ValidationError)>>),
 }

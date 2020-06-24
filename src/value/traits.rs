@@ -7,14 +7,14 @@ use crate::value::definition::*;
 /// a filled out ValueValidationError.
 ///
 pub trait ValidatesValues {
-    fn validate(&self, value: &Value) -> Result<(), ValueValidationError>;
+    fn validate(&self, value: &Value) -> Result<(), ValidationError>;
 }
 
 /// Value to Value Conversion
-pub trait ConvertsValues {
-    fn convert(&self, value: &Value, to_vtype: &ValueType) -> Result<Value, ValueConversionError>;
+pub trait CoercesValues {
+    fn convert(&self, value: &Value, to_vtype: &ValueType) -> Result<Value, CoercionError>;
 }
 
-pub trait ParsesToValue {
+pub trait ParsesValues {
     fn parse(&self, s: &str) -> Result<Value, ()>;
 }

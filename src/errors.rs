@@ -1,77 +1,51 @@
 use crate::value::constraint::*;
 use crate::value::definition::*;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
+use thiserror::Error;
 
 /// An error that represents a single instance of a failed Value validation
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Error)]
 #[serde(rename_all = "camelCase")]
 pub enum ConstraintError {
+    #[error("Encountered unexpected value type")]
     TypeError {
         expected: ValueType,
         received: ValueType,
     },
-    ValueError(ValueConstraint),
+
+    #[error("Value constraint violated")]
+    InvalidValueError(ValueConstraint),
+
+    #[error("Constraint inapplicable")]
     InvalidConstraintError, // TODO add constraint info
 }
 
-impl std::fmt::Display for ConstraintError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConstraintError::TypeError { expected, received } => write!(
-                f,
-                r#"Expected type: `{:?}`, received type: `{:?}`"#,
-                expected, received
-            ),
-            ConstraintError::ValueError(constraint) => {
-                write!(f, "Failed value constraint {:?}", constraint)
-            }
-            ConstraintError::InvalidConstraintError => write!(f, "Invalid constraint"),
-        }
-    }
-}
-
-impl Error for ConstraintError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Error)]
 #[serde(rename_all = "camelCase")]
-pub struct ValueValidationError {
-    pub offending_value: Value,
-    pub failed_constraints: Vec<ConstraintError>,
-}
-
-impl std::fmt::Display for ValueValidationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Value `{:?}` is invalid: {:?}",
-            self.offending_value, self.failed_constraints
-        )
-    }
-}
-
-impl Error for ValueValidationError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
+pub enum ValidationError {
+    #[error("Value violates constraint(s)")]
+    ValueValidationError {
+        offending_value: Value,
+        failed_constraints: Vec<ConstraintError>,
+    },
 }
 
 // TODO convert to proper Errors
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Error)]
 #[serde(rename_all = "camelCase")]
-pub enum ValueConversionError {
-    ConversionUnavailable {
-        from: ValueType,
-        to: ValueType,
-    },
-    UnexpectedType,
-    ParseError {
+pub enum CoercionError {
+    #[error("Impossible coercion between types")]
+    CoercionImpossible { from: ValueType, to: ValueType },
+
+    #[error("Cannot coerce to value")]
+    CoercionFailed {
         target_type: ValueType,
         source_text: String,
     },
+
+    #[error("Unexpected type")]
+    UnexpectedType,
+
+    #[error("Domain error")] // TODO elaborate on that
     DomainError(String),
 }

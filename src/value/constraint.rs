@@ -6,10 +6,10 @@ use serde::{Deserialize, Serialize};
 macro_rules! _to_valueconstraint_err {
     ( $($value:expr, $constraint:expr)? ) => {
         $(
-            Err(ValueValidationError {
+            Err(ValidationError::ValueValidationError {
                 offending_value: $value.clone(),
                 failed_constraints: vec![
-                    ConstraintError::ValueError($constraint.clone())
+                    ConstraintError::InvalidValueError($constraint.clone())
                 ]
             })
         )?
@@ -25,13 +25,13 @@ pub enum TypeConstraint {
 }
 
 impl ValidatesValues for TypeConstraint {
-    fn validate(&self, value: &Value) -> Result<(), ValueValidationError> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         match (self, value.get_value_type()) {
             (TypeConstraint::IsType(expected), received) => {
                 if expected == received {
                     Ok(())
                 } else {
-                    Err(ValueValidationError {
+                    Err(ValidationError::ValueValidationError {
                         offending_value: value.clone(),
                         failed_constraints: vec![ConstraintError::TypeError {
                             expected: expected.clone(),
@@ -57,7 +57,7 @@ pub enum ValueConstraint {
 }
 
 impl ValidatesValues for ValueConstraint {
-    fn validate(&self, value: &Value) -> Result<(), ValueValidationError> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         match (self, value) {
             (ValueConstraint::Any, _) => Ok(()),
             (ValueConstraint::Not(c), _) => match c.validate(value) {
@@ -107,11 +107,11 @@ impl ValidatesValues for ValueConstraint {
                     _to_valueconstraint_err!(value.clone(), self)
                 }
             }
-            (ValueConstraint::MaximumLength(_), _) => Err(ValueValidationError {
+            (ValueConstraint::MaximumLength(_), _) => Err(ValidationError::ValueValidationError {
                 offending_value: value.clone(),
                 failed_constraints: vec![ConstraintError::InvalidConstraintError],
             }),
-            (ValueConstraint::MinimumLength(_), _) => Err(ValueValidationError {
+            (ValueConstraint::MinimumLength(_), _) => Err(ValidationError::ValueValidationError {
                 offending_value: value.clone(),
                 failed_constraints: vec![ConstraintError::InvalidConstraintError],
             }),
@@ -136,23 +136,37 @@ impl ValueContract {
 }
 
 impl ValidatesValues for ValueContract {
-    fn validate(&self, value: &Value) -> Result<(), ValueValidationError> {
+    fn validate(&self, value: &Value) -> Result<(), ValidationError> {
         let mut errors_found = false;
         let mut errors: Vec<ConstraintError> = Vec::new();
         if let Err(tce) = self.expected_type.validate(value) {
             errors_found = true;
-            errors.extend(tce.failed_constraints);
+            match tce {
+                ValidationError::ValueValidationError {
+                    failed_constraints,
+                    offending_value,
+                } => {
+                    errors.extend(failed_constraints);
+                }
+            }
         };
 
         for vc in self.value_constraints.iter() {
             if let Err(vce) = vc.validate(value) {
                 errors_found = true;
-                errors.extend(vce.failed_constraints);
+                match vce {
+                    ValidationError::ValueValidationError {
+                        failed_constraints,
+                        offending_value,
+                    } => {
+                        errors.extend(failed_constraints);
+                    }
+                }
             }
         }
 
         if errors_found {
-            Err(ValueValidationError {
+            Err(ValidationError::ValueValidationError {
                 offending_value: value.clone(),
                 failed_constraints: errors,
             })
