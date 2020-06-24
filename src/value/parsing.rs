@@ -68,10 +68,18 @@ fn jsvalue_to_dkvalue(jsvalue: &serde_json::Value) -> Value {
 
 pub struct Parser {}
 
+impl Parser {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 impl ParsesValues for Parser {
-    fn parse(&self, s: &str) -> Result<Value, ()> {
-        let jsvalue: serde_json::Value = serde_json::from_str(s).unwrap(); // TODO fix this
-        let _dkvalue = jsvalue_to_dkvalue(&jsvalue);
-        Err(())
+    fn parse(&self, s: &str) -> Result<Value, ParsingError> {
+        if let Ok(jsvalue) = serde_json::from_str::<serde_json::Value>(s) {
+            Ok(jsvalue_to_dkvalue(&jsvalue))
+        } else {
+            Err(ParsingError::CannotParseValue(s.to_string()))
+        }
     }
 }

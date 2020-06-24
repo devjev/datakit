@@ -16,5 +16,5 @@ pub trait CoercesValues {
 }
 
 pub trait ParsesValues {
-    fn parse(&self, s: &str) -> Result<Value, ()>;
+    fn parse(&self, s: &str) -> Result<Value, ParsingError>;
 }
