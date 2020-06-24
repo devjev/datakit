@@ -144,7 +144,7 @@ impl ValidatesValues for ValueContract {
             match tce {
                 ValidationError::ValueValidationError {
                     failed_constraints,
-                    offending_value,
+                    offending_value: _,
                 } => {
                     errors.extend(failed_constraints);
                 }
@@ -157,7 +157,7 @@ impl ValidatesValues for ValueContract {
                 match vce {
                     ValidationError::ValueValidationError {
                         failed_constraints,
-                        offending_value,
+                        offending_value: _,
                     } => {
                         errors.extend(failed_constraints);
                     }
