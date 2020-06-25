@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 0.2
+
+- **0.2.0**: Datakit `Value`s can now be parsed from literals following JSON
+  syntax. For example, a string `"137"` can be parsed into a
+  `Value::Number(Numeric::(137))`. Parsing of arrays and objects/dictionaries is
+  also supported, as long as dictionary keys are strings.
+
 ## Version 0.1
 
 - **0.1.0**: Added `datakit::value`.
@@ -12,8 +19,6 @@
 - **0.2.0**: Refine schema compatibility checks for Table.
 - **0.2.0**: ~~Value contract and column contract checks need to be parallel.~~
   No performance gain there, needs more work.
-- **0.2.0**: Sane parsing of literal values to `datakit::Value` - piggybacking
-  on the JSON syntax.
 
 ## Version 0.3
 
