@@ -9,7 +9,7 @@
 //! 2. Clean the code up a bit, since it looks like hot trash.
 
 use crate::errors::*;
-use crate::value::definition::*;
+use crate::value::definitions::*;
 use crate::value::primitives::*;
 use crate::value::traits::*;
 use chrono::{DateTime, Local, Utc};

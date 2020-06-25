@@ -1,5 +1,5 @@
-use crate::value::constraint::*;
-use crate::value::definition::*;
+use crate::value::constraints::*;
+use crate::value::definitions::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

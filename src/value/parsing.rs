@@ -10,7 +10,7 @@
 //! See [this](https://docs.serde.rs/serde_json/index.html).
 
 use crate::errors::*;
-use crate::value::definition::*;
+use crate::value::definitions::*;
 use crate::value::primitives::*;
 use crate::value::traits::*;
 use chrono::{DateTime, Local, Utc};

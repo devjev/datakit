@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::value::definition::*;
+use crate::value::definitions::*;
 
 /// Value Validation
 ///

@@ -1,6 +1,6 @@
 pub mod coercion;
-pub mod constraint;
-pub mod definition;
+pub mod constraints;
+pub mod definitions;
 pub mod parsing;
 pub mod primitives;
 pub mod traits;

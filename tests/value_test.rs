@@ -1,5 +1,5 @@
 mod common_traits {
-    use datakit::value::definition::*;
+    use datakit::value::definitions::*;
     use datakit::value::primitives::*;
 
     macro_rules! from_impl_tests {
@@ -37,7 +37,7 @@ mod common_traits {
 }
 
 mod api {
-    use datakit::value::definition::*;
+    use datakit::value::definitions::*;
 
     #[test]
     fn is_of_type_is_correct() {
@@ -48,7 +48,7 @@ mod api {
 }
 
 pub mod value_parsing {
-    use datakit::value::definition::*;
+    use datakit::value::definitions::*;
     use datakit::value::parsing::Parser;
     use datakit::value::primitives::*;
     use datakit::value::traits::*;

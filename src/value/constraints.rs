@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::value::definition::*;
+use crate::value::definitions::*;
 use crate::value::traits::ValidatesValues;
 use serde::{Deserialize, Serialize};
 
