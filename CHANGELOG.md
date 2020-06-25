@@ -6,6 +6,11 @@
   syntax. For example, a string `"137"` can be parsed into a
   `Value::Number(Numeric::(137))`. Parsing of arrays and objects/dictionaries is
   also supported, as long as dictionary keys are strings.
+- **0.2.0 (feature = experimental)**: Added parallel implementations of column
+  and table schema/contract validations. Performance of these implementations
+  seems [worse](research/parallel/parallel-routines-datakit.md). Keeping these
+  implementations under the _experimental_ feature until I find a clear benefit
+  of using them in main code.
 
 ## Version 0.1
 
@@ -16,9 +21,11 @@
 
 ## Version 0.2
 
-- **0.2.0**: Refine schema compatibility checks for Table.
-- **0.2.0**: ~~Value contract and column contract checks need to be parallel.~~
-  No performance gain there, needs more work.
+- **0.2.0**: Validate tables against foreign schemas. There should be a "strict"
+  validation, i.e. the table must contain **only and exactly** the columns
+  defined in the schema. Alternatively, there must be a "minimal" mode, where
+  the validation checks, if a table contains **at least** the columns defined in the
+  schema.
 
 ## Version 0.3
 
