@@ -8,15 +8,6 @@ use std::collections::HashMap;
 #[cfg(feature = "experimental")]
 use rayon::prelude::*;
 
-#[cfg(feature = "experimental")]
-use std::sync::mpsc;
-
-#[cfg(feature = "experimental")]
-use std::sync::mpsc::{Receiver, Sender};
-
-#[cfg(feature = "experimental")]
-use std::thread;
-
 pub type Column = Vec<Value>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,7 +175,7 @@ impl Table {
         let column_contract = self.column_contract(col_id)?;
         let column = self.column(col_id)?;
 
-        let errors: Vec<(usize, ValueValidationError)> = column
+        let errors: Vec<(usize, ValidationError)> = column
             .par_iter()
             .enumerate()
             .filter_map(
@@ -236,7 +227,7 @@ impl Table {
 
     #[cfg(feature = "experimental")]
     pub fn validate_table_par(&self) -> Result<(), TableError> {
-        let column_results: Vec<(ColumnContract, Vec<(usize, ValueValidationError)>)> = self
+        let column_results: Vec<(ColumnContract, Vec<(usize, ValidationError)>)> = self
             .columns()
             .par_iter()
             .enumerate()
@@ -255,7 +246,7 @@ impl Table {
         if column_results.is_empty() {
             Ok(())
         } else {
-            let mut error_map: HashMap<String, Vec<(usize, ValueValidationError)>> = HashMap::new();
+            let mut error_map: HashMap<String, Vec<(usize, ValidationError)>> = HashMap::new();
             for (contract, errors) in column_results.iter() {
                 error_map.insert(contract.name.clone(), errors.clone());
             }

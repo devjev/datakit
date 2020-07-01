@@ -1,5 +1,9 @@
+extern crate datakit;
+
 use datakit::table::*;
-use datakit::value::*;
+use datakit::value::constraints::*;
+use datakit::value::definitions::*;
+use datakit::value::primitives::*;
 use rand::prelude::*;
 use serde::Serialize;
 use std::time::Instant;

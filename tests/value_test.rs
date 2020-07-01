@@ -48,6 +48,7 @@ mod api {
 }
 
 pub mod value_parsing {
+    use chrono::prelude::*;
     use datakit::value::definitions::*;
     use datakit::value::parsing::Parser;
     use datakit::value::primitives::*;
@@ -96,6 +97,24 @@ pub mod value_parsing {
                     ))
                 ])
             )
+    }
+
+    #[test]
+    fn datetime_literal() {
+        let parser = Parser::new();
+        let literal = "\"2020-06-25\"";
+        let target_value = Utc.ymd(2020, 6, 25).and_hms(0, 0, 0);
+        let value = parser.parse(literal).unwrap();
+        assert_eq!(value, Value::DateTime(target_value));
+    }
+
+    #[test]
+    fn datetime_full_literal() {
+        let parser = Parser::new();
+        let literal = "\"2020-06-25T00:00:00Z\"";
+        let target_value = Utc.ymd(2020, 6, 25).and_hms(0, 0, 0);
+        let value = parser.parse(literal).unwrap();
+        assert_eq!(value, Value::DateTime(target_value));
     }
 
     #[test]
