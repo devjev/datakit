@@ -36,10 +36,10 @@ pub enum CoercionError {
     #[error("Impossible coercion between types")]
     CoercionImpossible { from: ValueType, to: ValueType },
 
-    #[error("Cannot coerce to value")]
+    #[error("Cannot coerce value")]
     CoercionFailed {
         target_type: ValueType,
-        source_text: String,
+        source_value: Value,
     },
 
     #[error("Unexpected type")]

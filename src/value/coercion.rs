@@ -10,65 +10,23 @@
 
 use crate::errors::*;
 use crate::value::definitions::*;
+use crate::value::parsing::*;
 use crate::value::primitives::*;
 use crate::value::traits::*;
-use chrono::{DateTime, Local, Utc};
+//use chrono::{DateTime, Local, Utc};
 
-pub struct Coercion {}
+pub struct Coercion {
+    parser: Parser,
+}
 
 impl Coercion {
     pub fn new() -> Self {
-        Self {}
-    }
-
-    fn text_to_number(&self, value: &Value) -> Result<Value, CoercionError> {
-        if let Value::Text(s) = value {
-            match s.parse::<i64>() {
-                Ok(x) => Ok(Value::Number(Numeric::Integer(x))),
-                Err(_) => match s.parse::<f64>() {
-                    Ok(f) => Ok(Value::Number(Numeric::Real(f))),
-                    Err(_) => Err(CoercionError::CoercionFailed {
-                        target_type: ValueType::Number,
-                        source_text: s.clone(),
-                    }),
-                },
-            }
-        } else {
-            Err(CoercionError::UnexpectedType)
+        Self {
+            parser: Parser::new(),
         }
     }
 
-    fn text_to_boolean(&self, value: &Value) -> Result<Value, CoercionError> {
-        if let Value::Text(s) = value {
-            match s.parse::<bool>() {
-                Ok(b) => Ok(Value::Boolean(b)),
-                Err(_) => Err(CoercionError::CoercionFailed {
-                    target_type: ValueType::Boolean,
-                    source_text: s.clone(),
-                }),
-            }
-        } else {
-            Err(CoercionError::UnexpectedType)
-        }
-    }
-
-    fn text_to_datetime(&self, value: &Value) -> Result<Value, CoercionError> {
-        if let Value::Text(s) = value {
-            match s.parse::<DateTime<Local>>() {
-                Ok(t) => {
-                    let utc = t.with_timezone(&Utc);
-                    Ok(Value::DateTime(utc))
-                }
-                Err(_) => Err(CoercionError::CoercionFailed {
-                    target_type: ValueType::DateTime,
-                    source_text: s.clone(),
-                }),
-            }
-        } else {
-            Err(CoercionError::UnexpectedType)
-        }
-    }
-
+    // This needs to be harmonized with the Parser
     fn number_to_text(&self, value: &Value) -> Result<Value, CoercionError> {
         match value {
             Value::Number(Numeric::Integer(i)) => Ok(Value::Text(i.to_string())),
@@ -90,7 +48,7 @@ impl Coercion {
 
     fn datetime_to_text(&self, value: &Value) -> Result<Value, CoercionError> {
         if let Value::DateTime(t) = value {
-            Ok(Value::Text(t.to_rfc3339()))
+            Ok(Value::Text(t.to_string()))
         } else {
             Err(CoercionError::UnexpectedType)
         }
@@ -132,18 +90,28 @@ impl CoercesValues for Coercion {
             (Boolean, Boolean) => Ok(value.clone()),
             (Text, Text) => Ok(value.clone()),
             (Composite, Composite) => Ok(value.clone()),
-            (Text, Number) => self.text_to_number(value),
-            (Text, Boolean) => self.text_to_boolean(value),
             (Text, Composite) => Err(CoercionError::CoercionImpossible {
                 from: ValueType::Text,
                 to: ValueType::Composite,
             }),
-            (Text, DateTime) => self.text_to_datetime(value),
             (Number, Text) => self.number_to_text(value),
             (Boolean, Text) => self.boolean_to_text(value),
             (DateTime, Text) => self.datetime_to_text(value),
             (Number, Boolean) => self.number_to_boolean(value),
             (Boolean, Number) => self.boolean_to_number(value),
+            (Text, b) => match value {
+                Value::Text(s) => match self.parser.parse(s) {
+                    Err(_) => Err(CoercionError::CoercionFailed {
+                        target_type: b.clone(),
+                        source_value: value.clone(),
+                    }),
+                    Ok(x) => Ok(x),
+                },
+                _ => Err(CoercionError::CoercionImpossible {
+                    from: Text,
+                    to: b.clone(),
+                }),
+            },
             (a, Missing) => Err(CoercionError::CoercionImpossible {
                 from: a.clone(),
                 to: ValueType::Missing,

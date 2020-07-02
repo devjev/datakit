@@ -38,6 +38,22 @@ pub enum Date {
     },
 }
 
+impl std::fmt::Display for Date {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Date::YearMonthDay { year, month, day } => {
+                write!(f, "{:0>4}-{:0>2}-{:0>2}", year, month, day)
+            }
+            Date::YearWeekDay {
+                year,
+                week_in_year,
+                day_in_week,
+            } => write!(f, "{:0>4}-W{:0>2}-{}", year, week_in_year, day_in_week),
+            Date::YearDay { year, day_in_year } => write!(f, "{:0>4}-{:0>3}", year, day_in_year),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Time {
@@ -48,6 +64,19 @@ pub struct Time {
     pub micro: MicroNumber,
     pub nano: NanoNumber,
     pub timezone: TimeZone,
+}
+
+impl std::fmt::Display for Time {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let subseconds: f64 = (self.milli as f64 / 1000.0)
+            + (self.micro as f64 / 1000.0 / 1000.0)
+            + (self.nano as f64 / 1000.0 / 1000.0 / 1000.0);
+        writeln!(
+            f,
+            "{:0>2}:{:0>2}:{:0>2}.{}",
+            self.hour, self.minute, self.second, subseconds
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -96,5 +125,17 @@ impl DateTime {
             nano,
             timezone,
         })
+    }
+}
+
+impl std::fmt::Display for DateTime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DateTime::Date(d) => writeln!(f, "{}", d.to_string()),
+            DateTime::Time(t) => writeln!(f, "{}", t.to_string()),
+            DateTime::Full { date, time } => {
+                writeln!(f, "{}T{}", date.to_string(), time.to_string())
+            }
+        }
     }
 }

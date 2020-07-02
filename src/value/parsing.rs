@@ -13,23 +13,92 @@ use crate::errors::*;
 use crate::value::definitions::*;
 use crate::value::primitives::*;
 use crate::value::traits::*;
-use chrono::{DateTime, Local, Utc};
 
-// fn iso8601_to_dkvalue(is08601_struct: &iso8601::DateTime) {
+mod translate_iso8601 {
+    use crate::value::definitions::*;
+    use crate::value::primitives::*;
+    use std::convert::TryInto;
 
-// }
+    pub(crate) fn date_to_dk_date(iso8601_date: &iso8601::Date) -> Date {
+        match iso8601_date {
+            iso8601::Date::YMD { year, month, day } => Date::YearMonthDay {
+                year: *year,
+                month: (*month).try_into().unwrap(),
+                day: (*day).try_into().unwrap(),
+            },
+            iso8601::Date::Week { year, ww, d } => Date::YearWeekDay {
+                year: *year,
+                week_in_year: (*ww).try_into().unwrap(),
+                day_in_week: (*d).try_into().unwrap(),
+            },
+            iso8601::Date::Ordinal { year, ddd } => Date::YearDay {
+                year: *year,
+                day_in_year: (*ddd).try_into().unwrap(),
+            },
+        }
+    }
+
+    pub(crate) fn time_to_dk_time(iso8601_time: &iso8601::Time) -> Time {
+        match iso8601_time {
+            iso8601::Time {
+                hour,
+                minute,
+                second,
+                millisecond,
+                tz_offset_hours,
+                tz_offset_minutes,
+            } => {
+                let tz = if *tz_offset_hours == 0 && *tz_offset_minutes == 0 {
+                    TimeZone::Utc
+                } else {
+                    TimeZone::Offset {
+                        hours: (*tz_offset_hours).try_into().unwrap(),
+                        minutes: (*tz_offset_minutes).try_into().unwrap(),
+                    }
+                };
+
+                Time {
+                    hour: (*hour).try_into().unwrap(),
+                    minute: (*minute).try_into().unwrap(),
+                    second: (*second).try_into().unwrap(),
+                    milli: (*millisecond).try_into().unwrap(),
+                    micro: 0,
+                    nano: 0,
+                    timezone: tz,
+                }
+            }
+        }
+    }
+
+    pub(crate) fn datetime_to_dk_datetime(iso8601_struct: &iso8601::DateTime) -> DateTime {
+        let date = date_to_dk_date(&iso8601_struct.date);
+        let time = time_to_dk_time(&iso8601_struct.time);
+        DateTime::Full { date, time }
+    }
+
+    pub(crate) fn iso8601_to_dk_value(s: &str) -> Result<Value, ()> {
+        if let Ok(iso8601_struct) = iso8601::datetime(s) {
+            let datetime = datetime_to_dk_datetime(&iso8601_struct);
+            Ok(Value::DateTime(datetime))
+        } else if let Ok(iso8601_date) = iso8601::date(s) {
+            let date = date_to_dk_date(&iso8601_date);
+            Ok(Value::DateTime(DateTime::Date(date)))
+        } else if let Ok(iso8601_time) = iso8601::time(s) {
+            let time = time_to_dk_time(&iso8601_time);
+            Ok(Value::DateTime(DateTime::Time(time)))
+        } else {
+            Err(())
+        }
+    }
+}
 
 fn jsvalue_to_dkvalue(jsvalue: &serde_json::Value) -> Value {
     match jsvalue {
         serde_json::Value::Null => Value::Missing(Empty::Expected),
         serde_json::Value::Bool(x) => Value::Boolean(*x),
         serde_json::Value::String(s) => {
-            // 1. Try to parse a date,
-            // 2. Try to parse a complex (TODO)
-            // 3. If that fails, return that as string.
-            if let Ok(datetime) = s.parse::<DateTime<Local>>() {
-                let utc = datetime.with_timezone(&Utc);
-                Value::DateTime(utc)
+            if let Ok(datetime) = translate_iso8601::iso8601_to_dk_value(s) {
+                datetime
             } else {
                 Value::Text(s.clone())
             }

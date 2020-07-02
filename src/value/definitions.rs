@@ -1,5 +1,5 @@
 use crate::value::primitives::*;
-use chrono::{DateTime, FixedOffset, Local, Utc};
+//use chrono::{DateTime, FixedOffset, Local, Utc};
 use serde::{Deserialize, Serialize};
 
 macro_rules! value_type_definition {
@@ -80,7 +80,7 @@ macro_rules! impl_from_value_to_t_option {
 value_type_definition! {
     Number(Numeric),
     Text(String),
-    DateTime(DateTime<Utc>),
+    DateTime(DateTime),
     Missing(Empty),
     Boolean(bool),
     Composite(Collection<Value>)
@@ -107,6 +107,7 @@ impl_from_t_to_value! {
         let contents = String::from(*value);
         Value::Text(contents)
     },
+    /* TODO conditional on chrono
     DateTime<Utc> => |value: &DateTime<Utc>| {
         Value::DateTime(value.clone())
     },
@@ -118,6 +119,9 @@ impl_from_t_to_value! {
         let utc_time = value.with_timezone(&Utc);
         Value::DateTime(utc_time)
     },
+
+    */
+
     bool => |value: &bool| { Value::Boolean(value.clone()) }
 
     // TODO ensure coverage
@@ -129,8 +133,10 @@ impl_from_value_to_t_option! {
     f32 => Value::Number(Numeric::Real(r)) => r as f32,
     f64 => Value::Number(Numeric::Real(r)) => r,
     String => Value::Text(text) => text,
+    /* conditional on chrono
     DateTime<Utc> => Value::DateTime(t) => t,
     DateTime<Local> => Value::DateTime(t) => t.with_timezone(&Local),
+    */
     bool => Value::Boolean(b) => b
 
     // TODO &str and DateTime<FixedOffset>
