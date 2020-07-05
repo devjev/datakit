@@ -198,9 +198,12 @@ impl Table {
         }
     }
 
-    pub fn validate_column(&self, col_id: &ColumnId) -> Result<(), TableError> {
+    pub fn validate_column_against_contract(
+        &self,
+        col_id: &ColumnId,
+        column_contract: &ColumnContract,
+    ) -> Result<(), TableError> {
         let ordinal = self.resolve_column_id(col_id)?;
-        let column_contract = &self.column_contracts[ordinal];
         let column = &self.columns[ordinal];
 
         let mut result: Vec<(usize, ValidationError)> = Vec::new();
@@ -223,6 +226,12 @@ impl Table {
                 },
             ))
         }
+    }
+
+    pub fn validate_column(&self, col_id: &ColumnId) -> Result<(), TableError> {
+        let ordinal = self.resolve_column_id(col_id)?;
+        let column_contract = &self.column_contracts[ordinal];
+        self.validate_column_against_contract(&ColumnId::Ordinal(ordinal), column_contract)
     }
 
     #[cfg(feature = "experimental")]
@@ -255,9 +264,37 @@ impl Table {
     }
 
     pub fn validate_table(&self) -> Result<(), TableError> {
+        self.validate_table_against_contracts(&self.column_contracts, true)
+    }
+
+    pub fn validate_table_against_schema(
+        &self,
+        schema: &Schema,
+        strict: bool,
+    ) -> Result<(), TableError> {
+        self.validate_table_against_contracts(&schema.column_contracts, strict)
+    }
+
+    pub(crate) fn validate_table_against_contracts(
+        &self,
+        col_contracts: &Vec<ColumnContract>,
+        strict: bool,
+    ) -> Result<(), TableError> {
         let mut result: HashMap<String, Vec<(usize, ValidationError)>> = HashMap::new();
+
         for (ordinal, _) in self.columns.iter().enumerate() {
-            if let Err(table_error) = self.validate_column(&ColumnId::Ordinal(ordinal)) {
+            if !strict && (ordinal > col_contracts.len() - 1) {
+                break;
+            } else if strict && (ordinal > col_contracts.len() - 1) {
+                return Err(TableError::ColumnError(ColumnError::Unknown(
+                    ColumnId::Ordinal(ordinal),
+                )));
+            }
+
+            if let Err(table_error) = self.validate_column_against_contract(
+                &ColumnId::Ordinal(ordinal),
+                &col_contracts[ordinal],
+            ) {
                 if let TableError::ColumnError(ColumnError::ContainsInvalidValues {
                     contract: _,
                     errors,

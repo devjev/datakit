@@ -2,6 +2,12 @@
 
 ## Version 0.2
 
+- **0.2.1**: Validate tables against foreign schemas. There should be a "strict"
+  validation, i.e. the table must contain **only and exactly** the columns
+  defined in the schema. Alternatively, there must be a "minimal" mode, where
+  the validation checks, if a table contains **at least** the columns defined in the
+  schema.
+- **0.2.1**: Parses ISO 8601 dates into datakit value primitives.
 - **0.2.0**: Datakit `Value`s can now be parsed from literals following JSON
   syntax. For example, a string `"137"` can be parsed into a
   `Value::Number(Numeric::(137))`. Parsing of arrays and objects/dictionaries is
@@ -21,13 +27,7 @@
 
 ## Version 0.2
 
-- **0.2.2**: Added DateTime primitives. Put `chrono` integration into a separate
-  feature.
-- **0.2.0**: Validate tables against foreign schemas. There should be a "strict"
-  validation, i.e. the table must contain **only and exactly** the columns
-  defined in the schema. Alternatively, there must be a "minimal" mode, where
-  the validation checks, if a table contains **at least** the columns defined in the
-  schema.
+- **0.2.2**: Put `chrono` integration into a separate feature.
 - **0.2.2**: Implement custom `serde` Serializer/Deserializer for
   `datakit::table`. DSV and JSON at least. For JSON there should be options to
   either serialize "raw", i.e. default serialization of Datakit values to JSON,
