@@ -48,7 +48,6 @@ mod api {
 }
 
 pub mod value_parsing {
-    use chrono::prelude::*;
     use datakit::value::definitions::*;
     use datakit::value::parsing::Parser;
     use datakit::value::primitives::*;
@@ -103,7 +102,11 @@ pub mod value_parsing {
     fn datetime_literal() {
         let parser = Parser::new();
         let literal = "\"2020-06-25\"";
-        let target_value = Utc.ymd(2020, 6, 25).and_hms(0, 0, 0);
+        let target_value = DateTime::Date(Date::YearMonthDay {
+            year: 2020,
+            month: 6,
+            day: 25,
+        });
         let value = parser.parse(literal).unwrap();
         assert_eq!(value, Value::DateTime(target_value));
     }
@@ -112,7 +115,22 @@ pub mod value_parsing {
     fn datetime_full_literal() {
         let parser = Parser::new();
         let literal = "\"2020-06-25T00:00:00Z\"";
-        let target_value = Utc.ymd(2020, 6, 25).and_hms(0, 0, 0);
+        let target_value = DateTime::Full {
+            date: Date::YearMonthDay {
+                year: 2020,
+                month: 6,
+                day: 25,
+            },
+            time: Time {
+                hour: 0,
+                minute: 0,
+                second: 0,
+                milli: 0,
+                micro: 0,
+                nano: 0,
+                timezone: TimeZone::Utc,
+            },
+        };
         let value = parser.parse(literal).unwrap();
         assert_eq!(value, Value::DateTime(target_value));
     }
