@@ -2,8 +2,6 @@
 
 ## Version 0.2
 
-- **0.2.1**: Added DateTime primitives. Put `chrono` integration into a separate
-  feature.
 - **0.2.0**: Datakit `Value`s can now be parsed from literals following JSON
   syntax. For example, a string `"137"` can be parsed into a
   `Value::Number(Numeric::(137))`. Parsing of arrays and objects/dictionaries is
@@ -23,6 +21,8 @@
 
 ## Version 0.2
 
+- **0.2.2**: Added DateTime primitives. Put `chrono` integration into a separate
+  feature.
 - **0.2.0**: Validate tables against foreign schemas. There should be a "strict"
   validation, i.e. the table must contain **only and exactly** the columns
   defined in the schema. Alternatively, there must be a "minimal" mode, where
