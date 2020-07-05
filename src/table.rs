@@ -1,6 +1,12 @@
-use crate::value::*;
+use crate::errors::*;
+use crate::value::constraints::*;
+use crate::value::definitions::*;
+use crate::value::traits::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+#[cfg(feature = "experimental")]
+use rayon::prelude::*;
 
 pub type Column = Vec<Value>;
 
@@ -66,6 +72,10 @@ impl Table {
             col_length,
             row_length,
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.row_length
     }
 
     pub fn from_schema(schema: &Schema) -> Self {
@@ -160,13 +170,43 @@ impl Table {
         Ok(())
     }
 
-    pub fn validate_column(&self, col_id: &ColumnId) -> Result<(), TableError> {
+    #[cfg(feature = "experimental")]
+    pub fn validate_column_par(&self, col_id: &ColumnId) -> Result<(), TableError> {
+        let column_contract = self.column_contract(col_id)?;
+        let column = self.column(col_id)?;
+
+        let errors: Vec<(usize, ValidationError)> = column
+            .par_iter()
+            .enumerate()
+            .filter_map(
+                |(rowno, value)| match column_contract.value_contract.validate(value) {
+                    Ok(()) => None,
+                    Err(error) => Some((rowno, error)),
+                },
+            )
+            .collect();
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(TableError::ColumnError(
+                ColumnError::ContainsInvalidValues {
+                    contract: column_contract.clone(),
+                    errors: errors,
+                },
+            ))
+        }
+    }
+
+    pub fn validate_column_against_contract(
+        &self,
+        col_id: &ColumnId,
+        column_contract: &ColumnContract,
+    ) -> Result<(), TableError> {
         let ordinal = self.resolve_column_id(col_id)?;
-        let column_contract = &self.column_contracts[ordinal];
         let column = &self.columns[ordinal];
 
-        let mut result: Vec<(usize, ValueValidationError)> = Vec::new();
-        // TODO this can be done in parallel
+        let mut result: Vec<(usize, ValidationError)> = Vec::new();
         for (rowno, value) in column.iter().enumerate() {
             match column_contract.value_contract.validate(value) {
                 Ok(()) => (),
@@ -188,10 +228,73 @@ impl Table {
         }
     }
 
+    pub fn validate_column(&self, col_id: &ColumnId) -> Result<(), TableError> {
+        let ordinal = self.resolve_column_id(col_id)?;
+        let column_contract = &self.column_contracts[ordinal];
+        self.validate_column_against_contract(&ColumnId::Ordinal(ordinal), column_contract)
+    }
+
+    #[cfg(feature = "experimental")]
+    pub fn validate_table_par(&self) -> Result<(), TableError> {
+        let column_results: Vec<(ColumnContract, Vec<(usize, ValidationError)>)> = self
+            .columns()
+            .par_iter()
+            .enumerate()
+            .filter_map(|(ordinal, _)| {
+                match self.validate_column_par(&ColumnId::Ordinal(ordinal)) {
+                    Ok(()) => None,
+                    Err(TableError::ColumnError(ColumnError::ContainsInvalidValues {
+                        contract,
+                        errors,
+                    })) => Some((contract, errors)),
+                    _ => None,
+                }
+            })
+            .collect();
+
+        if column_results.is_empty() {
+            Ok(())
+        } else {
+            let mut error_map: HashMap<String, Vec<(usize, ValidationError)>> = HashMap::new();
+            for (contract, errors) in column_results.iter() {
+                error_map.insert(contract.name.clone(), errors.clone());
+            }
+            Err(TableError::InvalidData(error_map))
+        }
+    }
+
     pub fn validate_table(&self) -> Result<(), TableError> {
-        let mut result: HashMap<String, Vec<(usize, ValueValidationError)>> = HashMap::new();
+        self.validate_table_against_contracts(&self.column_contracts, true)
+    }
+
+    pub fn validate_table_against_schema(
+        &self,
+        schema: &Schema,
+        strict: bool,
+    ) -> Result<(), TableError> {
+        self.validate_table_against_contracts(&schema.column_contracts, strict)
+    }
+
+    pub(crate) fn validate_table_against_contracts(
+        &self,
+        col_contracts: &Vec<ColumnContract>,
+        strict: bool,
+    ) -> Result<(), TableError> {
+        let mut result: HashMap<String, Vec<(usize, ValidationError)>> = HashMap::new();
+
         for (ordinal, _) in self.columns.iter().enumerate() {
-            if let Err(table_error) = self.validate_column(&ColumnId::Ordinal(ordinal)) {
+            if !strict && (ordinal > col_contracts.len() - 1) {
+                break;
+            } else if strict && (ordinal > col_contracts.len() - 1) {
+                return Err(TableError::ColumnError(ColumnError::Unknown(
+                    ColumnId::Ordinal(ordinal),
+                )));
+            }
+
+            if let Err(table_error) = self.validate_column_against_contract(
+                &ColumnId::Ordinal(ordinal),
+                &col_contracts[ordinal],
+            ) {
                 if let TableError::ColumnError(ColumnError::ContainsInvalidValues {
                     contract: _,
                     errors,
@@ -203,10 +306,10 @@ impl Table {
             }
         }
 
-        if result.len() != 0 {
-            Err(TableError::TableInvalid(result))
-        } else {
+        if result.is_empty() {
             Ok(())
+        } else {
+            Err(TableError::InvalidData(result))
         }
     }
 
@@ -302,7 +405,7 @@ pub enum ColumnError {
     },
     ContainsInvalidValues {
         contract: ColumnContract,
-        errors: Vec<(usize, ValueValidationError)>,
+        errors: Vec<(usize, ValidationError)>,
     },
 }
 
@@ -311,5 +414,5 @@ pub enum ColumnError {
 pub enum TableError {
     DimensionError, // TODO
     ColumnError(ColumnError),
-    TableInvalid(HashMap<String, Vec<(usize, ValueValidationError)>>),
+    InvalidData(HashMap<String, Vec<(usize, ValidationError)>>),
 }
